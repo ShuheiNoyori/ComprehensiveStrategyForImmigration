@@ -87,10 +87,10 @@ def Excel2Dict(df_sheets, key):
 ##################################
 # Main
 ##################################
-df_sheets = pd.read_excel('総合戦略まとめ對馬0512.xlsx', sheet_name=None, skiprows=1, dtype=str)
+df_sheets = pd.read_excel('ExcelFile.xlsx', sheet_name=None, skiprows=1, dtype=str)
 data_senryaku = {}
 for key in df_sheets: # sheet毎にデータを取り出して処理
     data_senryaku[key] = Excel2Dict(df_sheets, key)
     
-with open('総合戦略まとめ對馬0512_converted.json', 'w') as f:
+with open('ExcelFile_converted.json', 'w') as f:
     json.dump(data_senryaku, f, indent=4, ensure_ascii=False)
