@@ -1,0 +1,2 @@
+# -ComprehensiveStrategyForImmigration
+総合戦略のテキストデータ解析
