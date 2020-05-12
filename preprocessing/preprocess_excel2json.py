@@ -16,6 +16,7 @@ def Excel2Dict(df_sheets, key):
     df = df_sheets[key]
     length = len(df.index)
     for col in df.columns:
+        # 姑息的にエラー吐く文字を消している
         df[col] = df[col].str.replace('\n', '') # 全ての改行文字を削除
         df[col] = df[col].str.replace('\u2248', '') # 無理矢理消した 
         df[col] = df[col].str.replace('\u5c10', '') # 無理矢理消した
