@@ -82,7 +82,7 @@ def Excel2Dict(df_sheets, key):
     else:
         print(key) # 基本目標がないのはどう見てもおかしいのでエラー
         return([])
-    return(mokuhyo_dict_result)
+    return(list(mokuhyo_dict_result.values()))
 
 ##################################
 # Main
