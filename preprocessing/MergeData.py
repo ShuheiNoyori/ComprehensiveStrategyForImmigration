@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 # 全データを結合
-path_to_file = '/Users/noyori/Downloads/PDF転記'#'path_to_file'
+path_to_file = 'path_to_file'
 filename_to_save = 'alldata_merged'
 
 list_df = []
