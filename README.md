@@ -1,6 +1,13 @@
 # -ComprehensiveStrategyForImmigration
 総合戦略のテキストデータ解析
 
+前処理MergeData.pyで.xlsx形式の全自治体分のファイルを読み込み, 結合してます.
+
+# 以下は古い情報ですが割と重要なこと書いてるのでそのまま残してます
+## 対応するPythonスクリプト
+- preprocess_excel2json.py
+- preprocess_json2table.py
+
 ## 解析の環境
 - Python 3.7.3 on Windows 10 (64-bit) ←Minicondaで入れた
 - Mecabはここ( https://github.com/ikegami-yukino/mecab/releases/tag/v0.996 )のをダウンロードして使った 
