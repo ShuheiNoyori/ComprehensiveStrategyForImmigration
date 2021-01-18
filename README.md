@@ -1,5 +1,11 @@
 # -ComprehensiveStrategyForImmigration
 総合戦略のテキストデータ解析
+## 解析環境
+https://qiita.com/paulxll/items/72a2bea9b1d1486ca751 を参考に設定  
+- macOS Catalina 10.15.7  
+- Python 3.7.9 (Anacondaで仮想環境"MeCab"を作ってそこに設定)
+- MeCab 0.996
+- 辞書 NEologd (デフォルトで使用する辞書をこちらに設定)
 
 ## 前処理
 [MergeData.py](https://github.com/ShuheiNoyori/ComprehensiveStrategyForImmigration/blob/master/preprocessing/MergeData.py)で.xlsx形式の全自治体分のファイルを読み込み結合.
@@ -9,8 +15,10 @@
   
 ### 以下は古い情報ですが割と重要なこと書いてるのでそのまま残してます
 #### 対応するPythonスクリプト
-- preprocess_excel2json.py
-- preprocess_json2table.py
+```
+preprocess_excel2json.py
+preprocess_json2table.py
+```  
 
 #### 解析の環境
 - Python 3.7.3 on Windows 10 (64-bit) ←Minicondaで入れた
