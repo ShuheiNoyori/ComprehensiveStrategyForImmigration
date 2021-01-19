@@ -12,16 +12,17 @@ import unicodedata
 global stopwords
 
 part = '名詞'
+excludelist = ['非自立', '代名詞', '接尾']
 maxwords = 3000 # 解析対象の単語数. 出現回数上位maxwordsまでのものを解析.
 colname = '詳細'
-stopwords = ['事業', '課', 'H2', 
-             'ため', 'こと', 'よう', 'もの', 'ごと', 'ほか', 'これ',
-             'それぞれ', 'その他', 'これら', 'および', 'もと'] # ストップワードのリスト
+stopwords = ['事業', '課', 'H2', 'もの', 'ごと', 'ほか', 'それぞれ', 'および', 'もと',
+             'ー', '一', '・'] # ストップワードのリスト
 hiragana = [chr(0x3041 + i) for i in range(83)] # 平仮名1文字のリスト
 katakana = [chr(0x30A1 + i) for i in range(86)] # 片仮名1文字のリスト
 english_c = [chr(0xFF21 + i) for i in range(26)] # 英語大文字1文字のリスト
 english_l = [chr(0xFF41 + i) for i in range(26)] # 英語小文字1文字のリスト
-stopwords += hiragana + katakana + english_c + english_l
+suji = [chr(0xADA1 + i) for i in range(30)] # 丸囲み数字, ローマ数字のリスト
+stopwords += hiragana + katakana + english_c + english_l + suji
 
 ##############################################
 # Functions
@@ -34,26 +35,27 @@ def IsNumber(string): # 文字列が数値か判定
     else:
         return True
 
-def Wakachi(text, part='名詞'): #Stringを与えると指定した品詞のリストを返す
+def Wakachi(text, part='名詞', excludelist=[]): #Stringを与えると指定した品詞のリストを返す
     tagger = MeCab.Tagger()
     tagger.parse('')
     node = tagger.parseToNode(unicodedata.normalize("NFKC", text))
     
     list_of_given_part = []
     while node:
-        if node.feature.split(",")[0] == part:
-            word = node.surface
-            if (not IsNumber(word)) and (not word in stopwords): #数字, ストップワードの場合はリストに入れない
-                list_of_given_part.append(word)
+        if node.feature.split(",")[0] == part: # 指定した品詞であるか
+            if not node.feature.split(",")[1] in excludelist: # 除外する品詞分類を個別に指定
+                word = node.surface
+                if (not IsNumber(word)) and (not word in stopwords): #数字, ストップワードの場合はリストに入れない
+                    list_of_given_part.append(word)
         node = node.next
     
     return list_of_given_part
 
-def WakachiPerIndex(df, colname, part='名詞'): # データフレームの指定した列について行ごとに分かち書きして, 指定した品詞のみpandas.Seriesで返す
+def WakachiPerIndex(df, colname, part='名詞', excludelist=[]): # データフレームの指定した列について行ごとに分かち書きして, 指定した品詞のみpandas.Seriesで返す
     list_of_words_per_index = []
     for index in df.index:
         text_to_analyze = df[colname].iloc[index]
-        list_of_words = Wakachi(text_to_analyze, part = part)
+        list_of_words = Wakachi(text_to_analyze, part = part, excludelist = excludelist)
         list_of_words_per_index.append(list_of_words)
     
     return pd.Series(list_of_words_per_index, name = 'ListOfWords')
@@ -106,7 +108,7 @@ filename = 'filename.csv'
 
 df = pd.read_csv(os.path.join(path_to_file, filename))
 
-series_noun = WakachiPerIndex(df, colname, part) # 分かち書き
+series_noun = WakachiPerIndex(df, colname, part, excludelist) # 分かち書き
 freq_noun = FrequencyOfWords(series_noun) # 単語の出現回数
 freq_noun_analyze = freq_noun[:maxwords] # 解析対象の単語
 
