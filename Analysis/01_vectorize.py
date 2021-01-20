@@ -95,7 +95,7 @@ def VectorizerTfIdf(vec_binary, vec_bag_of_words): # VectorizerBagOfWordsの出�
     idf = np.log(size0/(np.array(list(vec_binary.sum(axis = 0))*size0).reshape((size0, size1))))
     
     tf_idf = tf*idf
-    tf_idf_scale = tf_idf/(np.array(list(np.sqrt((tf_idf**2).sum(axis = 1)))*size1).reshape((size1, size0)).T)
+    tf_idf_scale = tf_idf/(np.array(list(np.sqrt((tf_idf**2).sum(axis = 1)))*size1).reshape((size1, size0)).T) + 1
     
     return tf_idf_scale
 
