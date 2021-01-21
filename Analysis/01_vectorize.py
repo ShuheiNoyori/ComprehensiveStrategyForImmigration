@@ -15,14 +15,12 @@ part = '名詞'
 excludelist = ['非自立', '代名詞', '接尾']
 maxwords = 3000 # 解析対象の単語数. 出現回数上位maxwordsまでのものを解析.
 colname = '詳細'
-stopwords = ['事業', '課', 'H2', 'もの', 'ごと', 'ほか', 'それぞれ', 'および', 'もと',
-             'ー', '一', '・'] # ストップワードのリスト
+stopwords_kobetsu = ['事業', 'もの', 'ほか', 'それぞれ', 'および', 'もと', 'ー', '一', '・'] # ストップワードのリスト
 hiragana = [chr(0x3041 + i) for i in range(83)] # 平仮名1文字のリスト
 katakana = [chr(0x30A1 + i) for i in range(86)] # 片仮名1文字のリスト
 english_c = [chr(0xFF21 + i) for i in range(26)] # 英語大文字1文字のリスト
 english_l = [chr(0xFF41 + i) for i in range(26)] # 英語小文字1文字のリスト
-suji = [chr(0xADA1 + i) for i in range(30)] # 丸囲み数字, ローマ数字のリスト
-stopwords += hiragana + katakana + english_c + english_l + suji
+stopwords = stopwords_kobetsu + hiragana + katakana + english_c + english_l
 
 ##############################################
 # Functions
@@ -111,6 +109,18 @@ df = pd.read_csv(os.path.join(path_to_file, filename))
 series_noun = WakachiPerIndex(df, colname, part, excludelist) # 分かち書き
 freq_noun = FrequencyOfWords(series_noun) # 単語の出現回数
 freq_noun_analyze = freq_noun[:maxwords] # 解析対象の単語
+
+print('文章に含まれる単語のうち, {}のみを解析対象とした. また, {}のうち, {}と判定されたものは除外した. さらに頻出の単語である「事業」を除外したうえで, 出現頻度上位{:,}までの単語をベクトルの計算に用いた.'\
+      .format(part,
+              part,
+              ', '.join(excludelist),
+              maxwords))
+print('出現した全{:,}種類の{}の出現頻度は全体で{:,}回であり, そのうち解析対象となったものは{:,}回, 全体の{:.02f}%であった.'\
+      .format(len(freq_noun.index), 
+              part, 
+              freq_noun.sum(),
+              freq_noun_analyze.sum(),
+              100*freq_noun_analyze.sum()/freq_noun.sum()))
 
 # ベクトル化
 vec_binary, vec_bag_of_words = VectorizerBagOfWords(series_noun, freq_noun_analyze.index)
