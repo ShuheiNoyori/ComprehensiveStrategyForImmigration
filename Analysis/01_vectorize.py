@@ -5,11 +5,14 @@ import pandas as pd
 import numpy as np
 import MeCab
 import unicodedata
+from matplotlib import pyplot as plt
+plt.rcParams['font.family'] = 'Hiragino Sans'
 
 ##############################################
 # Parameters
 ##############################################
 global stopwords
+global path_to_file
 
 part = '名詞'
 excludelist = ['非自立', '代名詞', '接尾']
@@ -65,6 +68,20 @@ def FrequencyOfWords(series_part): # 単語リストのSeriesを与えると, �
         
     return pd.Series(list_of_words).value_counts()
 
+def WordCount(series_part): # 単語リストのSeriesを与えると, 文章あたりの単語数を返す
+    list_of_word_count = []    
+    for i in series_part:
+        list_of_word_count.append(len(i))
+        
+    return pd.Series(list_of_word_count)
+
+def WordCountHist(series_word_count): # 文章ごとの単語数のSeriesを与えるとヒストグラムを描画する
+    plt.figure(figsize=(10, 6))
+    plt.hist(series_word_count, bins = 50)
+    plt.xlabel('文章内の単語数')
+    plt.ylabel('頻度 (地方公共団体数)')
+    plt.savefig(os.path.join(path_to_file, '地方公共団体ごとの文章内の単語数.png'), dpi = 400)
+
 def VectorizerBagOfWords(series_part, word_list): # 単語リストのSeriesとiterableな単語帳を与えるとBag of words(np.array)を返す
     vec_bin, vec_bow = [], []
     
@@ -107,7 +124,13 @@ filename = 'filename.csv'
 df = pd.read_csv(os.path.join(path_to_file, filename))
 
 series_noun = WakachiPerIndex(df, colname, part, excludelist) # 分かち書き
-freq_noun = FrequencyOfWords(series_noun) # 単語の出現回数
+
+series_word_count = WordCount(series_noun) # 文章ごとの単語数
+series_word_count.index = df[['No', '都道府県', '市区町村']] # indexを市区町村名に変更
+series_word_count.to_csv(os.path.join(path_to_file, 'wordcount_percity.csv'), encoding='utf-8-sig') #保存
+WordCountHist(series_word_count)
+
+"""freq_noun = FrequencyOfWords(series_noun) # 単語の出現回数
 freq_noun_analyze = freq_noun[:maxwords] # 解析対象の単語
 
 print('文章に含まれる単語のうち, {}のみを解析対象とした. また, {}のうち, {}と判定されたものは除外した. さらに頻出の単語である「事業」を除外したうえで, 出現頻度上位{:,}までの単語をベクトルの計算に用いた.'\
@@ -137,4 +160,4 @@ df_vec_tf_idf = pd.DataFrame(vec_tf_idf,
                              index = df[['No', '都道府県', '市区町村']],
                              columns = freq_noun_analyze.index)
 df_vec_tf_idf.to_csv(os.path.join(path_to_file, 'tfidf_{}.csv'.format(maxwords)), 
-                     encoding='utf-8-sig')
+                     encoding='utf-8-sig')"""
