@@ -19,7 +19,7 @@ def CityCode2Index(df, citycode=1100): # 市区町村コードからdfに対応�
     if citycode in list_city_code:
         return df.index[list_city_code.index(citycode)]
 
-def Dict2WordCloud(dictofwordsandvalues): # {単語: 任意の指標} の形で作成されたdictのデータからword cloudを描画
+def Dict2WordCloud(dictofwordsandvalues, figtitle=''): # {単語: 任意の指標} の形で作成されたdictのデータからword cloudを描画
     wc = wordcloud.WordCloud(font_path='/System/Library/Fonts/ヒラギノ角ゴシック W7.ttc',
                              width=600,
                              height=400,
@@ -30,6 +30,8 @@ def Dict2WordCloud(dictofwordsandvalues): # {単語: 任意の指標} の形で�
     
     plt.figure()
     plt.axis('off')
+    if figtitle!='':
+        plt.title(figtitle)
     plt.imshow(wc)
     
 def WordCloud(df, citycode=1100): #市区町村コードで指定した市区町村のワードクラウドを出力. 指定がない場合は1100北海道札幌市.
@@ -37,7 +39,7 @@ def WordCloud(df, citycode=1100): #市区町村コードで指定した市区町
     print(index)
     dict_words = df.loc[index].to_dict() # 指定された市区町村のデータをdictに変換
     dict_words = {k: v for k, v in dict_words.items() if v > 0} # tf-idf値が正のもののみ残す
-    Dict2WordCloud(dict_words)
+    Dict2WordCloud(dict_words, index)
 
 ##############################################
 # Main
