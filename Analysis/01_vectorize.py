@@ -16,16 +16,17 @@ global path_to_file
 
 part = '名詞'
 excludelist = ['非自立', '代名詞', '接尾', '形容動詞語幹']
-maxwords = 3000 # 解析対象の単語数. 出現回数上位maxwordsまでのものを解析.
+maxwords = 1000 # 解析対象の単語数. 出現回数上位maxwordsまでのものを解析.
 colname = '詳細'
 stopwords_kobetsu = ['事業', 'もの', 'ほか', 'それぞれ', 'および', 'もと', 'ー', '一', '・',
-                     '市', '本市', '市民', '市内', '区', '本区', '区民', '区内', 
-                     '町', '本町', '町民', '町内', '村', '本村', '村民', '村内', ] # ストップワードのリスト
+                     '市', '本市', '市民', '市内', '当市', '区', '本区', '区民', '区内', '当区', 
+                     '町', '本町', '町民', '町内', '当町', '村', '本村', '村民', '村内', '当村'] # ストップワードのリスト
 hiragana = [chr(0x3041 + i) for i in range(83)] # 平仮名1文字のリスト
 katakana = [chr(0x30A1 + i) for i in range(86)] # 片仮名1文字のリスト
 english_c = [chr(0xFF21 + i) for i in range(26)] # 英語大文字1文字のリスト
 english_l = [chr(0xFF41 + i) for i in range(26)] # 英語小文字1文字のリスト
-stopwords = stopwords_kobetsu + hiragana + katakana + english_c + english_l
+onebyte = [chr(0x0000 + i) for i in range(112)] # 1byte文字のリスト
+stopwords = stopwords_kobetsu + hiragana + katakana + english_c + english_l + onebyte
 
 ##############################################
 # Functions
@@ -38,7 +39,7 @@ def IsNumber(string): # 文字列が数字か判定
     else:
         return True
 
-def Wakachi(text, part='名詞', excludelist=[]): #Stringを与えると指定した品詞のリストを返す
+def WakachiWithYomi(text, part='名詞', excludelist=[]): #Stringを与えると指定した品詞の単語と読みのリストを返す
     tagger = MeCab.Tagger()
     tagger.parse('')
     text = unicodedata.normalize('NFKC', text) # Unicode正規化
@@ -48,9 +49,65 @@ def Wakachi(text, part='名詞', excludelist=[]): #Stringを与えると指定�
     while node:
         if node.feature.split(",")[0] == part: # 指定した品詞であるか
             if not node.feature.split(",")[1] in excludelist: # 除外する品詞分類を個別に指定
-                word = node.surface
+                word = node.surface # 単語
                 if (not IsNumber(word)) and \
                     (not word in stopwords): #数字, ストップワードの場合はリストに入れない
+                    if len(node.feature.split(",")) > 7: # Featureに読みが含まれている場合は読みをリストに追加
+                        yomi = node.feature.split(",")[7] # 読み
+                    else: # Featureに読みが含まれていない場合は単語自体を読みとしてリストに追加
+                        yomi = word
+                    list_of_given_part.append([word, yomi])
+        node = node.next
+    
+    return list_of_given_part
+
+def WakachiPerIndexWithYomi(df, colname, part='名詞', excludelist=[]): # データフレームの指定した列について行ごとに分かち書きして, 指定した品詞のみpandas.Seriesで返す
+    list_of_words_per_index = []
+    for index in df.index:
+        text_to_analyze = df[colname].iloc[index]
+        list_of_words = WakachiWithYomi(text_to_analyze, part = part, excludelist = excludelist)
+        list_of_words_per_index.append(list_of_words)
+    
+    return pd.Series(list_of_words_per_index, name = 'ListOfWords')
+
+def StandardizeSpellingInconsistencies(series_part): # 表記揺れの標準化のためのCSVを書き出し
+    list_of_words = []
+    for i in series_part:
+        list_of_words.extend(i)
+        
+    df_word_yomi = pd.DataFrame(list_of_words, columns = ['Word', 'Yomi']) # 単語と読みのDataFrame
+    df_word_yomi = df_word_yomi.drop_duplicates(subset=['Word'], keep='first') # 同一の単語を削除
+    list_same_yomi = []
+    for yomi in df_word_yomi['Yomi'].unique():
+        same_yomi = df_word_yomi[df_word_yomi['Yomi'] == yomi]['Word'].values.tolist()
+        if len(same_yomi) > 1:
+            list_same_yomi.append(','.join(same_yomi))
+    pd.DataFrame(list_same_yomi, columns=['Words']).\
+        to_csv('spelling_inconsistencies.csv', encoding='utf-8-sig', index=False)
+        
+def SpellingStandardizationDict(df_spelling_standardization): # DataFrameから表記揺れ標準化の辞書を作成
+    list_keys, list_vals = [], []
+    for words in df_spelling_standardization['Words']:
+        list_words = words.split(',')
+        
+        list_keys += list_words
+        list_vals += [list_words[0]]*len(list_words)
+    
+    dict_spelling_standardization = dict(zip(list_keys, list_vals))
+    return dict_spelling_standardization
+
+def Wakachi(text, part='名詞', excludelist=[]): #Stringを与えると指定した品詞の単語のリストを返す
+    tagger = MeCab.Tagger()
+    tagger.parse('')
+    text = unicodedata.normalize('NFKC', text) # Unicode正規化
+    node = tagger.parseToNode(text)
+    
+    list_of_given_part = []          
+    while node:
+        if node.feature.split(",")[0] == part: # 指定した品詞であるか
+            if not node.feature.split(",")[1] in excludelist: # 除外する品詞分類を個別に指定
+                word = node.surface # 単語
+                if (not IsNumber(word)) and (not word in stopwords): #数字, ストップワードの場合はリストに入れない
                     list_of_given_part.append(word)
         node = node.next
     
@@ -60,15 +117,23 @@ def WakachiPerIndex(df, colname, part='名詞', excludelist=[]): # データフ�
     list_of_words_per_index = []
     for index in df.index:
         text_to_analyze = df[colname].iloc[index]
-        list_of_words = Wakachi(text_to_analyze, part = part, excludelist = excludelist)
+        list_of_words = Wakachi(text_to_analyze,
+                                part = part,
+                                excludelist = excludelist)
         list_of_words_per_index.append(list_of_words)
     
     return pd.Series(list_of_words_per_index, name = 'ListOfWords')
 
-def FrequencyOfWords(series_part): # 単語リストのSeriesを与えると, 各単語の出現回数をpandas.Seriesで返す
+def FrequencyOfWords(series_part, dict_spelling_standardization = {}): # 単語リストのSeriesを与えると, 各単語の出現回数をpandas.Seriesで返す
     list_of_words = []
     for i in series_part:
         list_of_words.extend(i)
+        
+    if not dict_spelling_standardization == {}:
+        list_of_words = [dict_spelling_standardization[word] \
+                         if word in dict_spelling_standardization.keys() \
+                         else word
+                         for word in list_of_words]
         
     return pd.Series(list_of_words).value_counts()
 
@@ -127,14 +192,20 @@ filename = 'filename.csv'
 
 df = pd.read_csv(os.path.join(path_to_file, filename))
 
-series_noun = WakachiPerIndex(df, colname, part, excludelist) # 分かち書き
+# この部分は表記揺れの辞書作成のためだけに使用（同音異義語を出力し, それを人力で修正した辞書を読み込むことで表記揺れを標準化する）
+# series_noun_yomi = WakachiPerIndexWithYomi(df, colname, part, excludelist) # 分かち書き（単語と読みの入ったpandas.Series）
+# StandardizeSpellingInconsistencies(series_noun_yomi) # 表記揺れの標準化のためのCSVを書き出し
+# ここまで
 
+df_spelling_standardization = pd.read_csv('spelling_inconsistencies_selected.csv') # 表記揺れの標準化のためのCSVを編集したものを読み込み
+dict_spelling_standardization = SpellingStandardizationDict(df_spelling_standardization) #DataFramaをdictに変換
+
+series_noun = WakachiPerIndex(df, colname, part, excludelist) # 分かち書き（単語の入ったpandas.Series）
 series_word_count = WordCount(series_noun) # 文章ごとの単語数
 series_word_count.index = df[['No', '都道府県', '市区町村']] # indexを市区町村名に変更
-series_word_count.to_csv(os.path.join(path_to_file, 'wordcount_percity.csv'), encoding='utf-8-sig') #保存
 WordCountHist(series_word_count)
 
-freq_noun = FrequencyOfWords(series_noun) # 単語の出現回数
+freq_noun = FrequencyOfWords(series_noun, dict_spelling_standardization) # 単語の出現回数をカウント. 表記揺れの標準化も同時に行っている.
 freq_noun_analyze = freq_noun[:maxwords] # 解析対象の単語
 
 print('文章に含まれる単語のうち, {}のみを解析対象とした. また, {}のうち, {}と判定されたものは除外した. さらに頻出の単語である「事業」を除外したうえで, 出現頻度上位{:,}までの単語をベクトルの計算に用いた.'\
@@ -154,6 +225,8 @@ vec_binary, vec_bag_of_words = VectorizerBagOfWords(series_noun, freq_noun_analy
 vec_tf_idf = VectorizerTfIdf(vec_binary, vec_bag_of_words)
 
 # デーダフレームとして保存
+series_word_count.to_csv(os.path.join(path_to_file, 'wordcount_percity.csv'), encoding='utf-8-sig')
+
 df_vec_bag_of_words = pd.DataFrame(vec_bag_of_words, 
                                    index = df[['No', '都道府県', '市区町村']],
                                    columns = freq_noun_analyze.index)
