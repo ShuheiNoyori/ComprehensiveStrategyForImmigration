@@ -8,15 +8,20 @@ https://qiita.com/paulxll/items/72a2bea9b1d1486ca751 を参考に設定
 - 辞書 NEologd (デフォルトで使用する辞書をこちらに設定)
 
 ## 0. 前処理
-[MergeData.py](https://github.com/ShuheiNoyori/ComprehensiveStrategyForImmigration/blob/master/preprocessing/MergeData.py)で.xlsx形式の全自治体分のファイルを読み込み結合.
+[MergeData.py](https://github.com/ShuheiNoyori/ComprehensiveStrategyForImmigration/blob/master/preprocessing/MergeData.py)で.xlsx形式の全地方公共団体分のファイルを読み込み結合.
 - alldata_merged.csv: データの結合のみ. 改行は削除.
-- alldata_merged_onlyjigyo.csv: 1自治体を1行にデータの形を変換. 事業の間は###で区切った. 事業がない場合は施策, 施策もない場合は基本的方向を事業の代わりとした.  
+- alldata_merged_onlyjigyo.csv: 1地方公共団体を1行にデータの形を変換. 事業の間は###で区切った. 事業がない場合は施策, 施策もない場合は基本的方向を事業の代わりとした.  
   
 ## 1. 解析  
 ### 1-1. データのベクトル化
-[01_vectorize.py](https://github.com/ShuheiNoyori/ComprehensiveStrategyForImmigration/blob/master/Analysis/01_vectorize.py)で, alldata_merged_onlyjigyo.csvを読み込みベクトル化したデータをcsv形式で保存. 解析対象の単語は出現回数上位{maxwords}までのものとして指定. 
+[01_vectorize.py](https://github.com/ShuheiNoyori/ComprehensiveStrategyForImmigration/blob/master/Analysis/01_vectorize.py)で, alldata_merged_onlyjigyo.csvを読み込みベクトル化したデータをcsv形式で保存. 解析対象の単語は出現回数上位{maxwords}までのものとして指定. 関数StandardizeSpellingInconsistenciesにより, 同音の単語のリストをCSVとして書き出し, これを手で編集したspelling_inconsistencies_selected.csvを読み込んで表記揺れに対応. 関数FrequencyOfWordsで表記揺れを吸収しているが, 第２引数は指定しなくても良く, 指定しなかった場合は表記揺れの吸収は行われない.  
+下記のファイルを出力する.  
 - bagOfWords_{maxwords}.csv: 単語の出現頻度のベクトル  
 - tfidf_{maxwords}.csv: tf-idf値のベクトル  
+- wordcount_percity.csv: 地方公共団体ごとの単語数
+- 地方公共団体ごとの文章内の単語数.png: ヒストグラム
+  
+ファイルの先頭部分の, part, excludelist, stopwords_kobetsuで, それぞれ品詞, 除外する品詞の下位分類, ストップワードを指定.  
   
 ### 1-2. ワードクラウド描画  
 [02_wordcloud.py](https://github.com/ShuheiNoyori/ComprehensiveStrategyForImmigration/blob/master/Analysis/02_wordcloud.py)で, bagOfWords_{maxwords}.csvまたはtfidf_{maxwords}.csvを読み込んでワードクラウドを描画. 市区町村コードで描画する市区町村を指定する.
@@ -42,7 +47,7 @@ preprocess_json2table.py
   
 ```
 {  
-    "自治体名": [  
+    "地方公共団体名": [  
         {  
             "基本目標": "...",  
             "基本目標詳細": "...",  
