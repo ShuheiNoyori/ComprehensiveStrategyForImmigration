@@ -67,9 +67,6 @@ for cityno in df_merged['No'].unique():
     citynames = list(df_city[['No',
                               '都道府県',
                               '市区町村']].loc[df_city.index[0]].values)
-    
-    resultstr = resultstr.replace(' ', '') # 半角スペース削除
-    resultstr = resultstr.replace('　', '') # 全角スペース削除
 
     alldata.append(citynames + [jigyo, resultstr])
 
