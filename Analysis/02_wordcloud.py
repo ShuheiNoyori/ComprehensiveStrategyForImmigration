@@ -21,8 +21,8 @@ def CityCode2Index(df, citycode=1100): # 市区町村コードからdfに対応�
 
 def Dict2WordCloud(dictofwordsandvalues, figtitle=''): # {単語: 任意の指標} の形で作成されたdictのデータからword cloudを描画
     wc = wordcloud.WordCloud(font_path='/System/Library/Fonts/ヒラギノ角ゴシック W7.ttc',
-                             width=600,
-                             height=400,
+                             width=800,
+                             height=600,
                              prefer_horizontal=1,
                              background_color='white',
                              include_numbers=True
@@ -52,3 +52,4 @@ df = pd.read_csv(os.path.join(path_to_file, filename), index_col=0)
 
 # ワードクラウド描画
 WordCloud(df, citycode)
+plt.savefig(os.path.join(path_to_file, '{}_{}.png'.format(citycode, filename[:-4])), dpi=600)
